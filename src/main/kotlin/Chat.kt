@@ -10,12 +10,10 @@ object ChatService {
     private var idForChat = 1
     private var idForMessage = 1
 
-    fun clear () {
+    fun clear() {
         chats.clear()
         idForChat = 1
         idForMessage = 1
-
-
     }
 
     fun createMessage(
@@ -46,35 +44,29 @@ object ChatService {
     }
 
     fun getUnreadChatsCount(userId: Int): Int {
-        var count = 0
-        chats.forEach { chat ->
-            if (chat.users.contains(userId)) {
-                chat.messages.forEachIndexed { _, message ->
-                    if (!message.isRead) {
-                        count++
-                        return@forEachIndexed
-                    }
-                }
+        chats.filter {
+            it.users.contains(userId)
+        }.filter { chat ->
+            chat.messages.any {
+                !it.isRead
             }
-        }
+        }.let { return it.size }
 
-        return count
     }
 
     fun getChats(userId: Int): List<Chat> {
-        val gettingChats = chats.filter {
+        chats.filter {
             it.users.contains(userId)
-        }
-        return gettingChats
+        }.let { return it }
 
     }
 
     fun getMessages(idChat: Int, idLastMessageFrom: Int, countMessage: Int): List<Message> {
         val chat = chats.firstOrNull { it.id == idChat } ?: return emptyList()
-        val updateMessages = chat.messages
+        val updateMessages = chat.messages.asSequence()
             .filter { it.id >= idLastMessageFrom }
             .take(countMessage)
-            .map { it.copy(isRead = true) }
+            .map { it.copy(isRead = true) }.toList()
 
         val notUpdateMessages = chat.messages.filterNot { it.id >= idLastMessageFrom }
 
@@ -95,12 +87,9 @@ object ChatService {
 
         val notUpdateMessage = chat.messages.filterNot { it.id == idMessage }
         val updatedChat = chat.copy(messages = notUpdateMessage + updateMessage)
-        if (notUpdateMessage.isEmpty()) {
-            deleteChat(idChat)
-        } else {
-            chats.removeIf { updatedChat.id == it.id }
-            chats.add(updatedChat)
-        }
+
+        deleteChat(idChat)
+        if (notUpdateMessage.isNotEmpty()) chats.add(updatedChat)
 
         return true
     }
@@ -118,6 +107,7 @@ object ChatService {
         val updateChat = chat.copy(messages = editMessage)
         chats.removeIf { updateChat.id == it.id }
         chats.add(updateChat)
+
         return true
     }
 }
