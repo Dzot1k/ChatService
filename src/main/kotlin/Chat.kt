@@ -63,10 +63,10 @@ object ChatService {
 
     fun getMessages(idChat: Int, idLastMessageFrom: Int, countMessage: Int): List<Message> {
         val chat = chats.firstOrNull { it.id == idChat } ?: return emptyList()
-        val updateMessages = chat.messages
+        val updateMessages = chat.messages.asSequence()
             .filter { it.id >= idLastMessageFrom }
             .take(countMessage)
-            .map { it.copy(isRead = true) }
+            .map { it.copy(isRead = true) }.toList()
 
         val notUpdateMessages = chat.messages.filterNot { it.id >= idLastMessageFrom }
 
